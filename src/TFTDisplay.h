@@ -22,31 +22,31 @@ typedef struct
 
 typedef struct
 {
-    uiTextCfg time = uiTextCfg(22,5,3);
-    uiHLineCfg bar1 = uiHLineCfg(0,135,35,3);
-    uiTextCfg iaqLabel = uiTextCfg(1,50,2);
-    uiTextCfg iaqVal = uiTextCfg(63,50,3);
+    uiTextCfg time = {25, 5, 3};
+    uiHLineCfg bar1 = {0, 135, 353};
+    uiTextCfg iaqLabel = {1, 50, 2};
+    uiTextCfg iaqVal = {63, 50, 3};
 
-    uiTextCfg temperatureLabel = uiTextCfg(1,91,2);
-    uiTextCfg temperatureVal = uiTextCfg(63,91,3);
-    uiTextCfg temperatureValLabel = uiTextCfg(120,97,2);
+    uiTextCfg temperatureLabel = {1, 91, 2};
+    uiTextCfg temperatureVal = {63, 91, 3};
+    uiTextCfg temperatureValLabel = {120, 97, 2};
 
-    uiTextCfg humidityLabel = uiTextCfg(1,132,2);
-    uiTextCfg humidityVal = uiTextCfg(63,132,3);
-    uiTextCfg humidityValLabel = uiTextCfg(120,138,2);
+    uiTextCfg humidityLabel = {1, 132, 2};
+    uiTextCfg humidityVal = {63, 132, 3};
+    uiTextCfg humidityValLabel = {120, 138, 2};
 
-    uiTextCfg gasLabel = uiTextCfg(1,173,2);
-    uiTextCfg gasVal = uiTextCfg(63,173,3);
-    uiTextCfg gasValLabel = uiTextCfg(120,179,2);
+    uiTextCfg gasLabel = {1, 173, 2};
+    uiTextCfg gasVal = {63, 173, 3};
+    uiTextCfg gasValLabel = {120, 179, 2};
 
-    uiTextCfg co2Label = uiTextCfg(1,214,1);
-    uiTextCfg co2Val = uiTextCfg(23,214,2);
+    uiTextCfg co2Label = {1, 214, 1};
+    uiTextCfg co2Val = {23, 214, 2};
 
-    uiTextCfg vocLabel = uiTextCfg(76,214,1);
-    uiTextCfg vocVal = uiTextCfg(99,214,2);
+    uiTextCfg vocLabel = {76, 214, 1};
+    uiTextCfg vocVal = {99, 214, 2};
 
-} 
-uiDefs;
+} uiDefs;
+
 class TFTDisplay
 {
 public:
@@ -54,7 +54,7 @@ public:
     void begin();
     void drawStaticUI();
     void drawLabels();
-    void updateTime(int hour,int minute);
+    void updateTime(int hour, int minute);
     void updateIAQ(float iaq);
     void updateTemperature(float temperature);
     void updateHumidity(float humidity);
@@ -70,7 +70,6 @@ private:
     static const int timeBarHeight = 20;
     static const int numRows = 5;
     static const int rowHeight = (screenHeight - timeBarHeight) / numRows;
-
 };
 
 #endif
