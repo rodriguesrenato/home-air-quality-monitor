@@ -23,9 +23,9 @@ void SensorsModule::setup()
         BSEC_OUTPUT_GAS_PERCENTAGE,
         BSEC_OUTPUT_COMPENSATED_GAS};
     /* Initialize the library and interfaces */
-    if (!envSensor.begin(BME68X_I2C_ADDR_HIGH, Wire))
+    if (!envSensor_.begin(BME68X_I2C_ADDR_HIGH, Wire))
     {
-        checkBsecStatus(envSensor);
+        checkBsecStatus(envSensor_);
     }
 
     /*
@@ -34,23 +34,22 @@ void SensorsModule::setup()
      */
     if (SAMPLE_RATE == BSEC_SAMPLE_RATE_ULP)
     {
-        envSensor.setTemperatureOffset(TEMP_OFFSET_ULP);
+        envSensor_.setTemperatureOffset(TEMP_OFFSET_ULP);
     }
     else if (SAMPLE_RATE == BSEC_SAMPLE_RATE_LP)
     {
-        envSensor.setTemperatureOffset(TEMP_OFFSET_LP);
+        envSensor_.setTemperatureOffset(TEMP_OFFSET_LP);
     }
 
     /* Subsribe to the desired BSEC2 outputs */
-    if (!envSensor.updateSubscription(sensorList, ARRAY_LEN(sensorList), SAMPLE_RATE))
+    if (!envSensor_.updateSubscription(sensorList, ARRAY_LEN(sensorList), SAMPLE_RATE))
     {
-        checkBsecStatus(envSensor);
+        checkBsecStatus(envSensor_);
     }
 
     Serial.println("BSEC library version " +
-                   String(envSensor.version.major) + "." + String(envSensor.version.minor) + "." + String(envSensor.version.major_bugfix) + "." + String(envSensor.version.minor_bugfix));
+                   String(envSensor_.version.major) + "." + String(envSensor_.version.minor) + "." + String(envSensor_.version.major_bugfix) + "." + String(envSensor_.version.minor_bugfix));
 }
-
 
 bool SensorsModule::update()
 {
@@ -59,106 +58,99 @@ bool SensorsModule::update()
 
 /*
     Return True if successfully read the sensors, false otherwise
-*/ 
+*/
 bool SensorsModule::readSensors()
-{   
+{
     Serial.println("Try to read");
-
-    if (envSensor.run())
+    bool success{false};
+    if (envSensor_.run())
     {
-        
-        const bsecOutputs* outputs = envSensor.getOutputs();
-        if (outputs == nullptr){
-            return false;
-        }
-        if (!outputs->nOutputs)
-        {
-            return false;
-        }
-
-        for (uint8_t i = 0; i < outputs->nOutputs; i++)
-        {
-            const bsecData output = outputs->output[i];
-            switch (output.sensor_id)
-            {
-            case BSEC_OUTPUT_IAQ:
-                iaq = output.signal;
-                iaq_accuracy = output.accuracy;
-                Serial.println("\tIAQ = " + String(output.signal));
-                Serial.println("\tIAQ accuracy = " + String((int)output.accuracy));
-                break;
-            case BSEC_OUTPUT_RAW_TEMPERATURE:
-                raw_temperature = output.signal;
-                Serial.println("\tTemperature = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_RAW_PRESSURE:
-                raw_pressure = output.signal;
-                Serial.println("\tPressure = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_RAW_HUMIDITY:
-                raw_humidity = output.signal;
-                Serial.println("\tHumidity = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_RAW_GAS:
-                raw_gas = output.signal;
-                Serial.println("\tGas resistance = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_STABILIZATION_STATUS:
-                stabilization_status = output.signal;
-                Serial.println("\tStabilization status = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_RUN_IN_STATUS:
-                run_in_status = output.signal;
-                Serial.println("\tRun in status = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE:
-                sensor_heat_compensated_temperature = output.signal;
-                Serial.println("\tCompensated temperature = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY:
-                sensor_heat_compensated_humidity = output.signal;
-                Serial.println("\tCompensated humidity = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_STATIC_IAQ:
-                static_iaq = output.signal;
-                Serial.println("\tStatic IAQ = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_CO2_EQUIVALENT:
-                co2_equivalent = output.signal;
-                Serial.println("\tCO2 Equivalent = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_BREATH_VOC_EQUIVALENT:
-                breath_voc_equivalent = output.signal;
-                Serial.println("\tbVOC equivalent = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_GAS_PERCENTAGE:
-                gas_percentage = output.signal;
-                Serial.println("\tGas percentage = " + String(output.signal));
-                break;
-            case BSEC_OUTPUT_COMPENSATED_GAS:
-                compensated_gas = output.signal;
-                Serial.println("\tCompensated gas = " + String(output.signal));
-                break;
-            default:
-                break;
-            }
-        }
-        return true;
+        success = parseSensorsData();
     }
     else
     {
-        checkBsecStatus(envSensor);
-        return false;
+        checkBsecStatus(envSensor_);
     }
+
+    // Update library and sensor status
+    bsec_status_ = envSensor_.status;
+    bme68x_status_ = envSensor_.sensor.status;
+    return success;
 }
 
+bool SensorsModule::parseSensorsData()
+{
+    const bsecOutputs *outputs = envSensor_.getOutputs();
+    if (outputs == nullptr)
+    {
+        return false;
+    }
+    if (!outputs->nOutputs)
+    {
+        return false;
+    }
+
+    for (uint8_t i = 0; i < outputs->nOutputs; i++)
+    {
+        const bsecData output = outputs->output[i];
+        switch (output.sensor_id)
+        {
+        case BSEC_OUTPUT_IAQ:
+            iaq_ = output.signal;
+            iaq_accuracy_ = output.accuracy;
+            break;
+        case BSEC_OUTPUT_RAW_TEMPERATURE:
+            raw_temperature_ = output.signal;
+            break;
+        case BSEC_OUTPUT_RAW_PRESSURE:
+            raw_pressure_ = output.signal;
+            break;
+        case BSEC_OUTPUT_RAW_HUMIDITY:
+            raw_humidity_ = output.signal;
+            break;
+        case BSEC_OUTPUT_RAW_GAS:
+            raw_gas_ = output.signal;
+            break;
+        case BSEC_OUTPUT_STABILIZATION_STATUS:
+            stabilization_status_ = output.signal;
+            break;
+        case BSEC_OUTPUT_RUN_IN_STATUS:
+            run_in_status_ = output.signal;
+            break;
+        case BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE:
+            sensor_heat_compensated_temperature_ = output.signal;
+            break;
+        case BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY:
+            sensor_heat_compensated_humidity_ = output.signal;
+            break;
+        case BSEC_OUTPUT_STATIC_IAQ:
+            static_iaq_ = output.signal;
+            break;
+        case BSEC_OUTPUT_CO2_EQUIVALENT:
+            co2_equivalent_ = output.signal;
+            break;
+        case BSEC_OUTPUT_BREATH_VOC_EQUIVALENT:
+            breath_voc_equivalent_ = output.signal;
+            break;
+        case BSEC_OUTPUT_GAS_PERCENTAGE:
+            gas_percentage_ = output.signal;
+            break;
+        case BSEC_OUTPUT_COMPENSATED_GAS:
+            compensated_gas_ = output.signal;
+            break;
+        default:
+            break;
+        }
+    }
+
+    return true;
+}
 
 void SensorsModule::checkBsecStatus(Bsec2 bsec)
 {
     if (bsec.status < BSEC_OK)
     {
         Serial.println("BSEC error code : " + String(bsec.status));
-        // errLeds(); /* Halt in case of failure */
     }
     else if (bsec.status > BSEC_OK)
     {
@@ -168,7 +160,6 @@ void SensorsModule::checkBsecStatus(Bsec2 bsec)
     if (bsec.sensor.status < BME68X_OK)
     {
         Serial.println("BME68X error code : " + String(bsec.sensor.status));
-        // errLeds(); /* Halt in case of failure */
     }
     else if (bsec.sensor.status > BME68X_OK)
     {
@@ -178,30 +169,40 @@ void SensorsModule::checkBsecStatus(Bsec2 bsec)
 
 float SensorsModule::getIAQ()
 {
-    return iaq;
+    return iaq_;
 }
 
 float SensorsModule::getTemperature()
 {
-    return raw_temperature;
+    return raw_temperature_;
 }
 
 float SensorsModule::getHumidity()
 {
-    return raw_humidity;
+    return raw_humidity_;
 }
 
 float SensorsModule::getGas()
 {
-    return gas_percentage;
+    return gas_percentage_;
 }
 
 float SensorsModule::getCO2()
 {
-    return co2_equivalent;
+    return co2_equivalent_;
 }
 
 float SensorsModule::getVOC()
 {
-    return breath_voc_equivalent;
+    return breath_voc_equivalent_;
+}
+
+int SensorsModule::getBsecStatus()
+{
+    return bsec_status_;
+}
+
+int SensorsModule::getBme68xStatus()
+{
+    return bme68x_status_;
 }
