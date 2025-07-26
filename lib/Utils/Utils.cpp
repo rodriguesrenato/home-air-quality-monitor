@@ -1,6 +1,6 @@
 #include "Utils.h"
 
-unsigned long CalcDt(unsigned long ts)
+unsigned long calcDt(unsigned long ts)
 {
     unsigned long tm = millis();
     if (tm < ts)
@@ -10,7 +10,7 @@ unsigned long CalcDt(unsigned long ts)
     return tm - ts;
 }
 
-unsigned long CalcDtUs(unsigned long ts)
+unsigned long calcDtUs(unsigned long ts)
 {
     unsigned long tm = micros();
     if (tm < ts)
@@ -20,7 +20,7 @@ unsigned long CalcDtUs(unsigned long ts)
     return tm - ts;
 }
 
-void PrintDebug(String className, String functionName, String message)
+void printDebug(String className, String functionName, String message)
 {
     if (Serial)
     {

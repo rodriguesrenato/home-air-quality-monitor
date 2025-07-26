@@ -47,8 +47,8 @@ void SensorsModule::setup()
         checkBsecStatus(envSensor_);
     }
 
-    Serial.println("BSEC library version " +
-                   String(envSensor_.version.major) + "." + String(envSensor_.version.minor) + "." + String(envSensor_.version.major_bugfix) + "." + String(envSensor_.version.minor_bugfix));
+    printd("BSEC library version " +
+                   String(envSensor_.version.major) + "." + String(envSensor_.version.minor) + "." + String(envSensor_.version.major_bugfix) + "." + String(envSensor_.version.minor_bugfix),"setup");
 }
 
 bool SensorsModule::update()
@@ -61,7 +61,6 @@ bool SensorsModule::update()
 */
 bool SensorsModule::readSensors()
 {
-    Serial.println("Try to read");
     bool success{false};
     if (envSensor_.run())
     {
@@ -150,20 +149,20 @@ void SensorsModule::checkBsecStatus(Bsec2 bsec)
 {
     if (bsec.status < BSEC_OK)
     {
-        Serial.println("BSEC error code : " + String(bsec.status));
+        printd("BSEC error code : " + String(bsec.status),"checkBsecStatus");
     }
     else if (bsec.status > BSEC_OK)
     {
-        Serial.println("BSEC warning code : " + String(bsec.status));
+        printd("BSEC warning code : " + String(bsec.status),"checkBsecStatus");
     }
 
     if (bsec.sensor.status < BME68X_OK)
     {
-        Serial.println("BME68X error code : " + String(bsec.sensor.status));
+        printd("BME68X error code : " + String(bsec.sensor.status),"checkBsecStatus");
     }
     else if (bsec.sensor.status > BME68X_OK)
     {
-        Serial.println("BME68X warning code : " + String(bsec.sensor.status));
+        printd("BME68X warning code : " + String(bsec.sensor.status),"checkBsecStatus");
     }
 }
 
@@ -205,4 +204,9 @@ int SensorsModule::getBsecStatus()
 int SensorsModule::getBme68xStatus()
 {
     return bme68x_status_;
+}
+
+void SensorsModule::printd(String message,String function)
+{
+    printDebug("SensorsModule",function, message);
 }

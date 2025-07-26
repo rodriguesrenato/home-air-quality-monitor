@@ -14,6 +14,7 @@ struct tm localTimeinfo;
 
 void updateLocalTime();
 void setup_wifi();
+void printd(String message,String function);
 
 TFTDisplay display;
 SensorsModule sensors;
@@ -36,18 +37,19 @@ void setup(void)
   sensors.setup();
 
   display.begin();
+  printd("Initialised","setup");
 }
 
 void loop(void)
 {
-  if (CalcDt(updateLocalTimeTs) > updateLocalTimeDt)
+  if (calcDt(updateLocalTimeTs) > updateLocalTimeDt)
   {
     updateLocalTimeTs = millis();
     updateLocalTime();
     display.updateTime(localTimeinfo.tm_hour, localTimeinfo.tm_min);
   }
 
-  if (CalcDt(updateSensorsTs) > updateSensorsDt)
+  if (calcDt(updateSensorsTs) > updateSensorsDt)
   {
     updateSensorsTs = millis();
     if (sensors.update())
@@ -68,16 +70,15 @@ void setup_wifi(void)
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
-    Serial.print(".");
+    printd("Waiting to connect to "+String(USER_WIFI_SSID),"setup_wifi");
   }
 }
 
 void updateLocalTime(void)
 {
-  Serial.println("updateLocalTime");
   if (!getLocalTime(&localTimeinfo))
   {
-    Serial.println("Failed to obtain time");
+    printd("Failed to obtain time","updateLocalTime");
     return;
   }
 
@@ -87,4 +88,9 @@ void updateLocalTime(void)
   {
     updateLocalTimeTs = updateLocalTimeTs - offset_ts;
   }
+}
+
+void printd(String message,String function)
+{
+    printDebug("main",function, message);
 }

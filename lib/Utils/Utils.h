@@ -3,8 +3,8 @@
 
 #include <Arduino.h>
 
-unsigned long CalcDt(unsigned long ts);
-unsigned long CalcDtUs(unsigned long ts);
-void PrintDebug(String className, String functionName, String message);
+unsigned long calcDt(unsigned long ts);
+unsigned long calcDtUs(unsigned long ts);
+void printDebug(String className, String functionName, String message);
 
 #endif

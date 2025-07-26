@@ -2,6 +2,7 @@
 #define SENSORSMODULE_H
 
 #include <bsec2.h>
+#include <Utils.h>
 
 #define SAMPLE_RATE		BSEC_SAMPLE_RATE_CONT
 
@@ -24,6 +25,7 @@ private:
     void checkBsecStatus(Bsec2 bsec);
     bool readSensors();
     bool parseSensorsData();
+    void printd(String message,String function);
     float iaq_{};
     float iaq_accuracy_{};
     float raw_temperature_{};
