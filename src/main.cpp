@@ -2,18 +2,37 @@
 
 #include <TFTDisplay.h>
 #include <SensorsModule.h>
+#include <Utils.h>
+#include <wifi_env.h>
+#include <WiFi.h>
+#include "time.h"
+
+const char *ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = 0;
+const int daylightOffset_sec = 3600;
+struct tm localTimeinfo;
+
+void updateLocalTime();
+void setup_wifi();
 
 TFTDisplay display;
 SensorsModule sensors;
 
-int hour = 3;
-int minute = 0;
+// Update loops time tracking
+unsigned long updateLocalTimeTs{0};
+unsigned long updateLocalTimeDt{10000};
+unsigned long updateSensorsTs{0};
+unsigned long updateSensorsDt{1000};
 
 void setup(void)
 {
   Serial.begin(115200);
+  setup_wifi();
 
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  
   Wire.begin();
+
   sensors.setup();
 
   display.begin();
@@ -21,32 +40,51 @@ void setup(void)
 
 void loop(void)
 {
-  // TODO: get time from NTP server,
-  // then convert into a long (HH*60*60 + MM*60) and save as local_hh_mm
-  // save the SS*1000 into time_offset_ms
-  // then store it in a varible local_time_ms
-  // On every loop, (millis() + time_offset_ms) %(60*1000) != local_hh_mm
-  // if yes,update display with local_hh_mm
-
-  // Temporary simulation of time to show on display
-  if (minute + 1 > 59)
+  if (CalcDt(updateLocalTimeTs) > updateLocalTimeDt)
   {
-    hour = (hour + 1) % 23;
-  }
-  minute = (minute + 1) % 60;
-  
-  display.updateTime(hour, minute);
-  
-  // Update all sensors fields on the display if the sensor reading was successfull
-  if (sensors.update()){
-    display.updateIAQ(sensors.getIAQ());
-    display.updateTemperature(sensors.getTemperature());
-    display.updateHumidity(sensors.getHumidity());
-    display.updateGas(sensors.getGas());
-    display.updateCO2(sensors.getCO2());
-    display.updateVOC(sensors.getVOC());
+    updateLocalTimeTs = millis();
+    updateLocalTime();
+    display.updateTime(localTimeinfo.tm_hour, localTimeinfo.tm_min);
   }
 
-  // Simple ~1s to simulate sample/update frequency
-  delay(1000);
+  if (CalcDt(updateSensorsTs) > updateSensorsDt)
+  {
+    updateSensorsTs = millis();
+    if (sensors.update())
+    {
+      display.updateIAQ(sensors.getIAQ());
+      display.updateTemperature(sensors.getTemperature());
+      display.updateHumidity(sensors.getHumidity());
+      display.updateGas(sensors.getGas());
+      display.updateCO2(sensors.getCO2());
+      display.updateVOC(sensors.getVOC());
+    }
+  }
+}
+
+void setup_wifi(void)
+{
+  WiFi.begin(USER_WIFI_SSID, USER_WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+}
+
+void updateLocalTime(void)
+{
+  Serial.println("updateLocalTime");
+  if (!getLocalTime(&localTimeinfo))
+  {
+    Serial.println("Failed to obtain time");
+    return;
+  }
+
+  // calculate the seconds offset to get time close to an update time event
+  long offset_ts = (localTimeinfo.tm_sec * 1000) % updateLocalTimeDt;
+  if (updateLocalTimeTs > updateLocalTimeDt && offset_ts > 500)
+  {
+    updateLocalTimeTs = updateLocalTimeTs - offset_ts;
+  }
 }

@@ -1,0 +1,7 @@
+#ifndef WIFIENV_H
+#define WIFIENV_H
+
+#define USER_WIFI_SSID "YOUR_SSID"   //input your wifi name
+#define USER_WIFI_PASSWORD "YOUR_PASSWORD"   //input your wifi passwords
+
+#endif
